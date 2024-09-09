@@ -15,7 +15,7 @@
             background-color: #f0f4f8;
             color: #333;
         }
-        h1 {
+        h1, h2 {
             text-align: center;
             color: #2c3e50;
         }
@@ -134,10 +134,59 @@
         #resetGame:hover {
             background-color: #c0392b;
         }
+        #gameParameters {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            margin-bottom: 20px;
+        }
+        #gameParameters table {
+            width: 100%;
+            margin-top: 10px;
+        }
+        #gameParameters th, #gameParameters td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        #gameParameters th {
+            background-color: #3498db;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <h1>Inventory Control Game</h1>
+    <div id="gameParameters">
+        <h2>Game Parameters</h2>
+        <table>
+            <tr>
+                <th>Parameter</th>
+                <th>Value</th>
+            </tr>
+            <tr>
+                <td>Initial Stock Level</td>
+                <td>200 units</td>
+            </tr>
+            <tr>
+                <td>Ordering Cost</td>
+                <td>$150 per order</td>
+            </tr>
+            <tr>
+                <td>Holding Cost</td>
+                <td>$3.88 per unit per year (daily rate applied)</td>
+            </tr>
+            <tr>
+                <td>Cost of Goods Sold</td>
+                <td>$25 per unit</td>
+            </tr>
+            <tr>
+                <td>Selling Price</td>
+                <td>$39 per unit</td>
+            </tr>
+        </table>
+    </div>
     <div id="scenarioSelection">
         <label for="scenario">Select Scenario:</label>
         <select id="scenario">
@@ -210,6 +259,7 @@
         function confirmScenario() {
             if (!scenarioConfirmed) {
                 scenarioConfirmed = true;
+                document.getElementById('gameParameters').style.display = 'none';
                 document.getElementById('scenarioSelection').style.display = 'none';
                 document.getElementById('gameControls').style.display = 'block';
                 updateCharts();
