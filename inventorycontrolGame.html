@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory Control Game</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f0f4f8;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+        }
+        select, input, button {
+            margin: 10px 0;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            background-color: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+        th, td {
+            border: 1px solid #ecf0f1;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #3498db;
+            color: white;
+        }
+        .chart-container {
+            width: 100%;
+            height: 400px;
+            margin-top: 20px;
+            background-color: white;
+            padding: 20px;
+            box-sizing: border-box;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+        #supplyChain {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+        .entity {
+            text-align: center;
+            padding: 15px;
+            border: 2px solid #3498db;
+            border-radius: 10px;
+            background-color: #ecf0f1;
+            font-weight: bold;
+        }
+        .arrow {
+            font-size: 24px;
+            color: #3498db;
+        }
+        #latestRecord, #profitCalculation {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+        #showFullTable {
+            display: block;
+            margin: 20px auto;
+        }
+        #resultTable {
+            display: none;
+        }
+        .game-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+        }
+        .game-info div {
+            text-align: center;
+        }
+        .game-info p {
+            margin: 5px 0;
+        }
+        .game-info span {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        #scenarioSelection, #gameControls {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+            margin-bottom: 20px;
+        }
+        #resetGame {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+            background-color: #e74c3c;
+        }
+        #resetGame:hover {
+            background-color: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <h1>Inventory Control Game</h1>
+    <div id="scenarioSelection">
+        <label for="scenario">Select Scenario:</label>
+        <select id="scenario">
+            <option value="1">Demand: 15 units/day, Lead time: 0 day</option>
+            <option value="2">Demand: Normal distribution (mean 15, variance 5), Lead time: 0 day</option>
+            <option value="3">Demand: 15 units/day, Lead time: 3 days</option>
+            <option value="4">Demand: Normal distribution (mean 15, variance 5), Lead time: 3 days</option>
+        </select>
+        <button onclick="confirmScenario()">Confirm Scenario</button>
+    </div>
+    <div id="gameControls" style="display: none;">
+        <div id="supplyChain">
+            <div class="entity">Supplier</div>
+            <div class="arrow">→</div>
+            <div class="entity">Retailer (You)</div>
+            <div class="arrow">→</div>
+            <div class="entity">Customer</div>
+        </div>
+        <div class="game-info">
+            <div>
+                <p>Day: <span id="currentDay">1</span>/100</p>
+            </div>
+            <div>
+                <p>Current Inventory: <span id="currentInventory">200</span></p>
+            </div>
+            <div>
+                <p>Total Net Profit: $<span id="totalNetProfit">0</span></p>
+            </div>
+        </div>
+        <div>
+            <label for="orderQuantity">Order Quantity:</label>
+            <input type="number" id="orderQuantity" min="0">
+            <button onclick="placeOrder()">Place Order</button>
+        </div>
+        <div id="latestRecord"></div>
+        <button id="showFullTable" onclick="toggleFullTable()">Show Full Table</button>
+        <table id="resultTable">
+            <tr>
+                <th>Day</th>
+                <th>Demand</th>
+                <th>Inventory</th>
+                <th>Order Placed</th>
+                <th>Net Profit</th>
+            </tr>
+        </table>
+        <div id="profitCalculation"></div>
+        <div class="chart-container">
+            <canvas id="combinedChart"></canvas>
+        </div>
+    </div>
+    <button id="resetGame" onclick="resetGame()">Reset Game</button>
+
+    <script>
+        let currentDay = 1;
+        let inventory = 200;
+        let totalNetProfit = 0;
+        let demandHistory = [];
+        let inventoryHistory = [200];
+        let profitHistory = [0];
+        let orderHistory = [];
+        let pendingOrders = [];
+        let scenarioConfirmed = false;
+
+        const initialStock = 200;
+        const orderingCost = 150;
+        const holdingCost = 3.88 / 365; // per unit per day
+        const costOfGoodsSold = 25;
+        const sellingPrice = 39;
+
+        function confirmScenario() {
+            if (!scenarioConfirmed) {
+                scenarioConfirmed = true;
+                document.getElementById('scenarioSelection').style.display = 'none';
+                document.getElementById('gameControls').style.display = 'block';
+                updateCharts();
+            }
+        }
+
+        function resetGame() {
+            location.reload();
+        }
+
+        function normalRandom(mean, variance) {
+            let u = 0, v = 0;
+            while (u === 0) u = Math.random();
+            while (v === 0) v = Math.random();
+            const num = Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+            return Math.round(num * Math.sqrt(variance) + mean);
+        }
+
+        function getDemand() {
+            const scenario = document.getElementById('scenario').value;
+            switch (scenario) {
+                case '1':
+                case '3':
+                    return 15;
+                case '2':
+                case '4':
+                    return Math.max(0, normalRandom(15, 5));
+            }
+        }
+
+        function getLeadTime() {
+            const scenario = document.getElementById('scenario').value;
+            return (scenario === '3' || scenario === '4') ? 3 : 0;
+        }
+
+        function placeOrder() {
+            if (!scenarioConfirmed) {
+                alert('Please confirm the scenario first.');
+                return;
+            }
+
+            const orderQuantityInput = document.getElementById('orderQuantity');
+            const orderQuantity = parseInt(orderQuantityInput.value);
+            if (isNaN(orderQuantity) || orderQuantity < 0) {
+                alert('Please enter a valid order quantity.');
+                return;
+            }
+
+            const leadTime = getLeadTime();
+            if (orderQuantity > 0) {
+                pendingOrders.push({quantity: orderQuantity, arrivalDay: currentDay + leadTime});
+            }
+
+            const demand = getDemand();
+            demandHistory.push(demand);
+
+            let orderPlaced = orderQuantity > 0 ? orderQuantity : 0;
+            orderHistory.push(orderPlaced);
+
+            // Process pending orders
+            const arrivedOrders = pendingOrders.filter(order => order.arrivalDay === currentDay);
+            const arrivedQuantity = arrivedOrders.reduce((sum, order) => sum + order.quantity, 0);
+            pendingOrders = pendingOrders.filter(order => order.arrivalDay > currentDay);
+
+            inventory += arrivedQuantity;
+            const sales = Math.min(inventory, demand);
+            inventory -= sales;
+
+            const revenue = sales * sellingPrice;
+            const cogs = sales * costOfGoodsSold;
+            const orderingCostTotal = orderQuantity > 0 ? orderingCost : 0;
+            const holdingCostTotal = inventory * holdingCost;
+            const netProfit = revenue - cogs - orderingCostTotal - holdingCostTotal;
+
+            totalNetProfit += netProfit;
+            inventoryHistory.push(inventory);
+            profitHistory.push(netProfit);
+
+            updateTable(demand, inventory, orderPlaced, netProfit);
+            updateLatestRecord(demand, inventory, orderPlaced, netProfit);
+            updateProfitCalculation(revenue, cogs, orderingCostTotal, holdingCostTotal, netProfit);
+            updateCharts();
+
+            currentDay++;
+            document.getElementById('currentDay').textContent = currentDay;
+            document.getElementById('currentInventory').textContent = inventory;
+            document.getElementById('totalNetProfit').textContent = totalNetProfit.toFixed(2);
+
+            // Reset order quantity input to 0
+            orderQuantityInput.value = 0;
+
+            if (currentDay > 100) {
+                alert('Game Over! Total Net Profit: $' + totalNetProfit.toFixed(2));
+                resetGame();
+            }
+        }
+
+        function updateTable(demand, inventory, orderPlaced, netProfit) {
+            const table = document.getElementById('resultTable');
+            const row = table.insertRow(-1);
+            row.insertCell(0).textContent = currentDay;
+            row.insertCell(1).textContent = demand;
+            row.insertCell(2).textContent = inventory;
+            row.insertCell(3).textContent = orderPlaced;
+            row.insertCell(4).textContent = '$' + netProfit.toFixed(2);
+        }
+
+        function updateLatestRecord(demand, inventory, orderPlaced, netProfit) {
+            const latestRecord = document.getElementById('latestRecord');
+            latestRecord.innerHTML = `
+                <h3>Latest Record:</h3>
+                <p>Day: ${currentDay}</p>
+                <p>Demand: ${demand}</p>
+                <p>Inventory: ${inventory}</p>
+                <p>Order Placed: ${orderPlaced}</p>
+                <p>Net Profit: $${netProfit.toFixed(2)}</p>
+            `;
+        }
+
+        function updateProfitCalculation(revenue, cogs, orderingCostTotal, holdingCostTotal, netProfit) {
+            const profitCalc = document.getElementById('profitCalculation');
+            profitCalc.innerHTML = `
+                <h3>Profit Calculation:</h3>
+                <p>Revenue: $${revenue.toFixed(2)}</p>
+                <p>Cost of Goods Sold: $${cogs.toFixed(2)}</p>
+                <p>Ordering Cost: $${orderingCostTotal.toFixed(2)}</p>
+                <p>Holding Cost: $${holdingCostTotal.toFixed(2)}</p>
+                <p>Net Profit: $${netProfit.toFixed(2)}</p>
+            `;
+        }
+
+        function toggleFullTable() {
+            const table = document.getElementById('resultTable');
+            const button = document.getElementById('showFullTable');
+            if (table.style.display === 'none') {
+                table.style.display = 'table';
+                button.textContent = 'Hide Full Table';
+            } else {
+                table.style.display = 'none';
+                button.textContent = 'Show Full Table';
+            }
+        }
+
+        let combinedChart;
+
+        function updateCharts() {
+            if (!combinedChart) {
+                combinedChart = new Chart(document.getElementById('combinedChart').getContext('2d'), {
+                    type: 'line',
+                    data: {
+                        labels: Array.from({length: 100}, (_, i) => i + 1),
+                        datasets: [
+                            {
+                                label: 'Demand',
+                                data: demandHistory,
+                                borderColor: 'rgb(255, 99, 132)',
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Inventory Level',
+                                data: inventoryHistory,
+                                borderColor: 'rgb(54, 162, 235)',
+                                yAxisID: 'y',
+                            },
+                            {
+                                label: 'Net Profit',
+                                data: profitHistory,
+                                borderColor: 'rgb(75, 192, 192)',
+                                yAxisID: 'y1',
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: {
+                                type: 'linear',
+                                display: true,
+                                position: 'left',
+                                title: {
+                                    display: true,
+                                    text: 'Demand / Inventory'
+                                }
+                            },
+                            y1: {
+                                type: 'linear',
+                                display: true,
+                                position: 'right',
+                                title: {
+                                    display: true,
+                                    text: 'Net Profit ($)'
+                                },
+                                grid: {
+                                    drawOnChartArea: false,
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                combinedChart.data.datasets[0].data = demandHistory;
+                combinedChart.data.datasets[1].data = inventoryHistory;
+                combinedChart.data.datasets[2].data = profitHistory;
+                combinedChart.update();
+            }
+        }
+    </script>
+</body>
+</html>
